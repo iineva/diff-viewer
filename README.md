@@ -4,12 +4,13 @@ diff 比对工具
 
 ## URL 参数
 
-| 参数      | 类型   | 说明                             |
-| --------- | ------ | -------------------------------- |
-| readonly  | bool   | 是否只读模式                     |
-| leftCode  | string | 原始代码 base64Encode(orgCode)   |
-| rightCode | string | 修改后代码 base64Encode(newCode) |
-| jsonMode  | bool   | 是否 json 模式（自动格式化）     |
+| 参数          | 类型   | 说明                             |
+| ------------- | ------ | -------------------------------- |
+| readonly      | bool   | 是否只读模式                     |
+| leftCode      | string | 原始代码 base64Encode(orgCode)   |
+| rightCode     | string | 修改后代码 base64Encode(newCode) |
+| jsonMode      | bool   | 是否 json 模式（自动格式化）     |
+| hiddenToolBar | bool   | 是否隐藏工具栏                   |
 
 # React + TypeScript + Vite
 

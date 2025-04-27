@@ -17,6 +17,7 @@ function App() {
   const leftCodeParam = useSearchParamBase64DecodeToString("leftCode");
   const rightCodeParam = useSearchParamBase64DecodeToString("rightCode");
   const jsonModeParam = useSearchParamBool("jsonMode");
+  const hiddenToolBar = useSearchParamBool("hiddenToolBar");
 
   // param from localStorage
   const [jsonMode, setJonMode] = useLocalStorage("_json_mode_", jsonModeParam);
@@ -68,44 +69,47 @@ function App() {
 
   return (
     <>
-      <div className="top">
-        <div style={{ flex: 1 }}>
-          {!readonly && (
-            <>
-              {items}
-              <span className="tab" onClick={() => setCount(count + 1)}>
-                +
-              </span>
-              <span
-                className="tab"
-                onClick={() => setCount(Math.max(1, count - 1))}
-              >
-                -{" "}
-              </span>
-            </>
-          )}
-        </div>
+      {!hiddenToolBar && (
+        <div className="top">
+          <div style={{ flex: 1 }}>
+            {!readonly && (
+              <>
+                {items}
+                <span className="tab" onClick={() => setCount(count + 1)}>
+                  +
+                </span>
+                <span
+                  className="tab"
+                  onClick={() => setCount(Math.max(1, count - 1))}
+                >
+                  -{" "}
+                </span>
+              </>
+            )}
+          </div>
 
-        <ButtonItem
-          title={readonly ? "只读模式" : "编辑模式"}
-          value={readonly}
-        />
-        <ButtonItem
-          title={compactMode ? "紧凑" : "展开"}
-          value={compactMode}
-          setValue={setCompactMode}
-        />
-        <ButtonItem title={"JSON"} value={jsonMode} setValue={setJonMode} />
-        <ButtonItem
-          title={sort ? "按行排序" : "对比原文"}
-          value={sort}
-          setValue={setSort}
-        />
-      </div>
+          <ButtonItem
+            title={readonly ? "只读模式" : "编辑模式"}
+            value={readonly}
+          />
+          <ButtonItem
+            title={compactMode ? "紧凑" : "展开"}
+            value={compactMode}
+            setValue={setCompactMode}
+          />
+          <ButtonItem title={"JSON"} value={jsonMode} setValue={setJonMode} />
+          <ButtonItem
+            title={sort ? "按行排序" : "对比原文"}
+            value={sort}
+            setValue={setSort}
+          />
+        </div>
+      )}
+
       <DiffItem
         key={index}
         compactMode={compactMode}
-        marginTop={true}
+        marginTop={!hiddenToolBar}
         leftCode={leftCode}
         setLeftCode={setLeftCode}
         rightCode={rightCode}
