@@ -14,3 +14,8 @@ html,
   margin: 0;
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
 }
+
+#root {
+  height: 100vh;
+  display: flex;
+}

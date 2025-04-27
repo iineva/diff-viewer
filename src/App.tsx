@@ -4,42 +4,38 @@ import { useLocalStorage } from "react-use";
 import {
   useSearchParamBase64DecodeToString,
   useSearchParamBool,
-  useSearchParamInt,
 } from "./utils/hooks";
 import DiffItem from "./components/DiffItem";
 import TabItem from "./components/TabItem";
+import ButtonItem from "./components/ButtonItem";
 
 function App() {
-  const readonly = useSearchParamBool("readonly");
+  // param from url query
+  const readonly = useSearchParamBool("readonly") || false;
+  const compactModeParam = useSearchParamBool("compactMode");
+  const leftCodeParam = useSearchParamBase64DecodeToString("leftCode");
+  const rightCodeParam = useSearchParamBase64DecodeToString("rightCode");
+  const jsonModeParam = useSearchParamBool("jsonMode");
+
+  // param from localStorage
+  const [jsonMode, setJonMode] = useLocalStorage("_json_mode_", jsonModeParam);
   const [count = 0, setCount] = useLocalStorage("_diff_item_count_", 1);
   const [index, setIndex] = useLocalStorage("_diff_item_index_", 0);
-  const [showInput, setShowInput] = useLocalStorage("_show_input_", true);
-  const [showDiffOnlyStorage, setShowDiffOnly] = useLocalStorage(
-    "_show_diff_only_",
-    true
+  const [compactMode, setCompactMode] = useLocalStorage(
+    "_compact_mode_",
+    compactModeParam
   );
-  const showDiffOnly = useSearchParamBool("showDiffOnly", showDiffOnlyStorage);
-  const [leftCodeStorage, setLeftCode] = useLocalStorage(
-    readonly ? `_left_code_${new Date().getTime()}` : `_left_code_${index}_`,
-    ""
-  );
-  const [rightCodeStorage, setRightCode] = useLocalStorage(
-    readonly ? `_left_code_${new Date().getTime()}` : `_right_code_${index}_`,
-    ""
-  );
-  const leftCode = useSearchParamBase64DecodeToString(
-    "leftCode",
-    leftCodeStorage
-  );
-  const rightCode = useSearchParamBase64DecodeToString(
-    "rightCode",
-    rightCodeStorage
-  );
-  const extraLinesSurroundingDiff = useSearchParamInt(
-    "extraLinesSurroundingDiff",
-    1
-  );
-  const [sort, setSort] = useLocalStorage("_sort_", false);
+  let [sort, setSort] = useLocalStorage("_sort_", false);
+  sort = readonly ? false : sort;
+
+  // 代码只读模式优先从 URL 获取
+  let [leftCode, setLeftCode] = useLocalStorage(`_left_code_${index}_`, "");
+  let [rightCode, setRightCode] = useLocalStorage(`_right_code_${index}_`, "");
+  leftCode = readonly ? leftCodeParam : leftCode;
+  rightCode = readonly ? rightCodeParam : rightCode;
+  setLeftCode = readonly ? () => {} : setLeftCode;
+  setRightCode = readonly ? () => {} : setRightCode;
+
   const items = useMemo(
     () =>
       new Array(count)
@@ -61,51 +57,51 @@ function App() {
 
   return (
     <>
-      {!readonly && (
-        <div className="top">
-          <div style={{ flex: 1 }}>
-            {items}
-            <span className="tab" onClick={() => setCount(count + 1)}>
-              +
-            </span>
-            <span
-              className="tab"
-              onClick={() => setCount(Math.max(1, count - 1))}
-            >
-              -
-            </span>
-          </div>
-          <span
-            className={`button tab`}
-            onClick={() => setShowDiffOnly(!showDiffOnly)}
-          >
-            {showDiffOnly ? "简洁" : "详细"}
-          </span>
-          <span
-            className={`button tab`}
-            onClick={() => setShowInput(!showInput)}
-          >
-            {showInput ? "显示输入" : "隐藏输入"}
-          </span>
-          <span
-            className={`button tab ${sort ? "actived" : ""}`}
-            onClick={() => setSort(!sort)}
-          >
-            {sort ? "已自动排序" : "已关闭排序"}
-          </span>
+      <div className="top">
+        <div style={{ flex: 1 }}>
+          {!readonly && (
+            <>
+              {items}
+              <span className="tab" onClick={() => setCount(count + 1)}>
+                +
+              </span>
+              <span
+                className="tab"
+                onClick={() => setCount(Math.max(1, count - 1))}
+              >
+                -{" "}
+              </span>
+            </>
+          )}
         </div>
-      )}
+
+        <ButtonItem
+          title={readonly ? "只读模式" : "编辑模式"}
+          value={readonly}
+        />
+        <ButtonItem
+          title={compactMode ? "紧凑" : "展开"}
+          value={compactMode}
+          setValue={setCompactMode}
+        />
+        <ButtonItem title={"JSON"} value={jsonMode} setValue={setJonMode} />
+        <ButtonItem
+          title={sort ? "按行排序" : "对比原文"}
+          value={sort}
+          setValue={setSort}
+        />
+      </div>
       <DiffItem
-        // index={index}
-        sort={readonly ? false : sort}
-        showInput={readonly ? false : showInput}
-        showDiffOnly={showDiffOnly}
-        marginTop={!readonly}
+        key={index}
+        sort={sort}
+        compactMode={compactMode}
+        marginTop={true}
         leftCode={leftCode}
         setLeftCode={setLeftCode}
         rightCode={rightCode}
         setRightCode={setRightCode}
-        extraLinesSurroundingDiff={extraLinesSurroundingDiff}
+        readOnly={readonly}
+        jsonMode={jsonMode}
       />
     </>
   );
