@@ -37,8 +37,11 @@
   display: flex;
   width: 100vw;
   flex-direction: column;
+}
+.diff-item.margin-top {
   margin-top: 44px;
 }
+
 
 .button {
   border-left: 1px solid #eee;
