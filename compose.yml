@@ -1,0 +1,8 @@
+services:
+  web:
+    image: ineva/diff-viewer
+    labels:
+      - dev.orbstack.domains=diff-tool.orb.local
+x-dockge:
+  urls:
+    - https://diff-tool.orb.local
