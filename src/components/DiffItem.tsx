@@ -31,8 +31,6 @@ self.MonacoEnvironment = {
   },
 };
 
-const sortTxt = (t?: string) => (t || "").split("\n").sort().join("\n");
-
 const tryPrettyJson = (j?: string) => {
   try {
     const obj = JSON.parse(j || "");
@@ -43,7 +41,6 @@ const tryPrettyJson = (j?: string) => {
 };
 
 function DiffItem({
-  sort,
   compactMode,
   marginTop,
   leftCode,
@@ -54,7 +51,6 @@ function DiffItem({
   jsonMode,
   language = "javascript",
 }: {
-  sort?: boolean;
   compactMode?: boolean; // 紧凑模式
   marginTop?: boolean;
   leftCode?: string;
@@ -67,14 +63,12 @@ function DiffItem({
 }) {
   const newLeftCode = useMemo(() => {
     if (jsonMode) return tryPrettyJson(leftCode);
-    if (!sort) return leftCode;
-    return sortTxt(leftCode);
-  }, [sort, leftCode, jsonMode]);
+    return leftCode;
+  }, [leftCode, jsonMode]);
   const newRightCode = useMemo(() => {
     if (jsonMode) return tryPrettyJson(rightCode);
-    if (!sort) return rightCode;
-    return sortTxt(rightCode);
-  }, [sort, rightCode, jsonMode]);
+    return rightCode;
+  }, [rightCode, jsonMode]);
 
   // 监听代码变化
   const handleEditorMount = (editor: MonacoDiffEditor) => {

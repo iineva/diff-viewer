@@ -8,10 +8,11 @@ import {
 import DiffItem from "./components/DiffItem";
 import TabItem from "./components/TabItem";
 import ButtonItem from "./components/ButtonItem";
+import { sortTxt } from "./utils/strings";
 
 function App() {
   // param from url query
-  const readonly = useSearchParamBool("readonly") || false;
+  const readonlyParam = useSearchParamBool("readonly") || false;
   const compactModeParam = useSearchParamBool("compactMode");
   const leftCodeParam = useSearchParamBase64DecodeToString("leftCode");
   const rightCodeParam = useSearchParamBase64DecodeToString("rightCode");
@@ -25,8 +26,8 @@ function App() {
     "_compact_mode_",
     compactModeParam
   );
-  let [sort, setSort] = useLocalStorage("_sort_", false);
-  sort = readonly ? false : sort;
+  const [sort, setSort] = useLocalStorage("_sort_", false);
+  const readonly = readonlyParam || sort;
 
   // 代码只读模式优先从 URL 获取
   let [leftCode, setLeftCode] = useLocalStorage(`_left_code_${index}_`, "");
@@ -35,6 +36,16 @@ function App() {
   rightCode = readonly ? rightCodeParam : rightCode;
   setLeftCode = readonly ? () => {} : setLeftCode;
   setRightCode = readonly ? () => {} : setRightCode;
+
+  // sort by line
+  leftCode = useMemo(() => {
+    if (!sort) return leftCode;
+    return sortTxt(leftCode);
+  }, [sort, leftCode]);
+  rightCode = useMemo(() => {
+    if (!sort) return rightCode;
+    return sortTxt(rightCode);
+  }, [sort, rightCode]);
 
   const items = useMemo(
     () =>
@@ -93,7 +104,6 @@ function App() {
       </div>
       <DiffItem
         key={index}
-        sort={sort}
         compactMode={compactMode}
         marginTop={true}
         leftCode={leftCode}
