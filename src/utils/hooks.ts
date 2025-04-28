@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 import { useSearchParam } from "react-use";
 
 export function useSearchParamInt(
@@ -6,14 +6,14 @@ export function useSearchParamInt(
   def?: number
 ): number | undefined {
   const str = useSearchParam(key);
-  const [value, setValue] = useState<number | undefined>(def);
-  useEffect(() => {
+  return useMemo(() => {
     try {
       const v = parseInt(str || "");
-      setValue(isNaN(v) ? def : v);
-    } catch (e) {}
+      return isNaN(v) ? def : v;
+    } catch (e) {
+      return def;
+    }
   }, [str]);
-  return value;
 }
 
 export function useSearchParamBool(
@@ -21,18 +21,17 @@ export function useSearchParamBool(
   def?: boolean
 ): boolean | undefined {
   const str = useSearchParam(key) || "";
-  const [value, setValue] = useState<boolean | undefined>(def);
-  useEffect(() => {
+  return useMemo(() => {
     try {
       if (str.toLocaleLowerCase() == "true") {
-        setValue(true);
-        return;
+        return true;
       }
       const v = parseInt(str);
-      setValue(isNaN(v) ? def : !!v);
-    } catch (e) {}
+      return isNaN(v) ? def : !!v;
+    } catch (e) {
+      return def;
+    }
   }, [str, def]);
-  return value;
 }
 
 // base64 decode
@@ -51,11 +50,9 @@ export function useSearchParamString(
   def?: string
 ): string | undefined {
   const str = useSearchParam(key);
-  const [value, setValue] = useState<string | undefined>(def);
-  useEffect(() => {
-    setValue(str === null ? def : str);
+  return useMemo(() => {
+    return str === null ? def : str;
   }, [str, def]);
-  return value;
 }
 
 export function useSearchParamBase64DecodeToString(
@@ -63,15 +60,14 @@ export function useSearchParamBase64DecodeToString(
   def?: string
 ): string | undefined {
   const str = useSearchParam(key);
-  const [value, setValue] = useState<string | undefined>(def);
-  useEffect(() => {
+  return useMemo(() => {
     if (str === null) {
-      setValue(def);
-      return;
+      return def;
     }
     try {
-      setValue(base64Decode(str || ""));
-    } catch (e) {}
+      return base64Decode(str || "");
+    } catch (e) {
+      return def;
+    }
   }, [str, def]);
-  return value;
 }

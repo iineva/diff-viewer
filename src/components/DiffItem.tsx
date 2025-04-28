@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { DiffEditor, MonacoDiffEditor } from "@monaco-editor/react";
 
 import { loader } from "@monaco-editor/react";
@@ -8,6 +8,8 @@ import jsonWorker from "monaco-editor/esm/vs/language/json/json.worker?worker";
 import cssWorker from "monaco-editor/esm/vs/language/css/css.worker?worker";
 import htmlWorker from "monaco-editor/esm/vs/language/html/html.worker?worker";
 import tsWorker from "monaco-editor/esm/vs/language/typescript/ts.worker?worker";
+import { useSearchParamString } from "../utils/hooks";
+import { postMessage } from "../utils/postMessage";
 self.MonacoEnvironment = {
   getWorker(_, label) {
     if (label === "json") {
@@ -47,6 +49,8 @@ function DiffItem({
   readOnly,
   jsonMode,
   language = "javascript",
+  lineWrapping,
+  originalEditable,
 }: {
   compactMode?: boolean; // 紧凑模式
   marginTop?: boolean;
@@ -57,7 +61,10 @@ function DiffItem({
   readOnly?: boolean;
   jsonMode?: boolean; // json模式，自动格式化 json 后预览
   language?: string;
+  lineWrapping?: boolean; // 自动换行
+  originalEditable?: boolean;
 }) {
+  const parentOrign = useSearchParamString("parent") || "";
   const newLeftCode = useMemo(() => {
     if (jsonMode) return tryPrettyJson(leftCode);
     return leftCode;
@@ -66,22 +73,74 @@ function DiffItem({
     if (jsonMode) return tryPrettyJson(rightCode);
     return rightCode;
   }, [rightCode, jsonMode]);
+  const [editor, setEditor] = useState<MonacoDiffEditor | undefined>(undefined);
 
-  // 监听代码变化
-  const handleEditorMount = (editor: MonacoDiffEditor) => {
+  useEffect(() => {
+    if (!editor) return;
+
     const originalEditor = editor.getOriginalEditor();
     const modifiedEditor = editor.getModifiedEditor();
 
-    // 监听原始编辑器内容变化
-    originalEditor.onDidChangeModelContent(async () => {
-      setLeftCode(originalEditor.getValue());
+    postMessage({ event: "onMount", parent: parentOrign }, parentOrign); // iframe 上级通知成功挂在
+
+    const postHeightChange = (height: number) => {
+      const h = height + (marginTop ? 36 : 0);
+      if (Math.abs(heightLast - h) > 5) {
+        heightLast = h;
+        postMessage(
+          {
+            event: "onHeightChange",
+            value: h,
+            from: "left",
+            parent: parentOrign,
+          },
+          parentOrign
+        );
+      }
+    };
+
+    // 监听内容高度变化
+    const node = originalEditor.getDomNode()?.querySelector(".view-lines");
+    let heightLast = -1;
+    // 创建 ResizeObserver 实例
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (let entry of entries) {
+        if (entry.target !== node) continue;
+        const { height } = entry.contentRect; // 获取当前高度
+        postHeightChange(height);
+      }
     });
+    node && resizeObserver.observe(node);
+
+    // 监听原始编辑器内容变化
+    const cancelOrgChange = originalEditor.onDidChangeModelContent(async () => {
+      const t = originalEditor.getValue();
+      setLeftCode && setLeftCode(t);
+      postMessage(
+        { event: "onTextChange", value: t, from: "left", parent: parentOrign },
+        parentOrign
+      );
+      postHeightChange(originalEditor.getContentHeight());
+    });
+    originalEditor.onDidChangeModelLanguageConfiguration;
 
     // 监听修改编辑器内容变化
-    modifiedEditor.onDidChangeModelContent(async () => {
-      setRightCode(modifiedEditor.getValue());
+    const cancelModChange = modifiedEditor.onDidChangeModelContent(async () => {
+      const t = modifiedEditor.getValue();
+      setRightCode && setRightCode(t);
+      postMessage(
+        { event: "onTextChange", value: t, from: "right", parent: parentOrign },
+        parentOrign
+      );
+      postHeightChange(modifiedEditor.getContentHeight());
     });
-  };
+
+    return () => {
+      resizeObserver && resizeObserver.disconnect();
+      cancelOrgChange && cancelOrgChange.dispose();
+      cancelModChange && cancelModChange.dispose();
+    };
+  }, [editor, parentOrign, marginTop, setLeftCode, setRightCode]);
 
   return (
     <div className={`diff-item ${marginTop ? "margin-top" : ""}`}>
@@ -97,10 +156,10 @@ function DiffItem({
         keepCurrentModifiedModel={true}
         options={{
           wordBreak: "normal",
-          wordWrap: "on",
+          wordWrap: lineWrapping ? "on" : "off",
           minimap: { enabled: true, autohide: true },
           readOnly: readOnly,
-          originalEditable: !readOnly,
+          originalEditable: originalEditable,
           fontSize: 16,
           renderGutterMenu: false,
           scrollBeyondLastLine: false,
@@ -130,7 +189,7 @@ function DiffItem({
           // renderIndicators: true,
           // compactMode: true,
         }}
-        onMount={handleEditorMount}
+        onMount={(e) => setEditor(e)}
       />
     </div>
   );

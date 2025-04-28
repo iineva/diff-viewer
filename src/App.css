@@ -1,5 +1,5 @@
 .top {
-  position: fixed;
+  position: flex;
   background: #fff;
   width: 100%;
   border-bottom: 1px solid #eee;
@@ -39,9 +39,7 @@
   flex-direction: column;
 }
 .diff-item.margin-top {
-  margin-top: 44px;
 }
-
 
 .button {
   border-left: 1px solid #eee;
