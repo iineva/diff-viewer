@@ -1,11 +1,44 @@
 import { useMemo } from "react";
-import { useSearchParam } from "react-use";
+import { useHash } from "react-use";
+import { useCallback } from "react";
+
+export function useHashParam(key: string) {
+  const [hash, setHash] = useHash();
+  const value = useMemo(() => {
+    const hashParams = new URLSearchParams(hash.slice(1));
+    return hashParams.get(key);
+  }, [hash, key]);
+
+  // Function to update the hash param
+  const updateValue = useCallback(
+    (newValue: string | null) => {
+      const hashParams = new URLSearchParams(hash.slice(1));
+
+      if (newValue === null) {
+        hashParams.delete(key);
+      } else {
+        hashParams.set(key, newValue);
+      }
+
+      const newHash = hashParams.toString();
+      setHash(newHash ? `#${newHash}` : "");
+    },
+    [key, setHash]
+  );
+
+  return [value, updateValue] as const;
+}
+
+export function useHashParamValue(key: string) {
+  const [value] = useHashParam(key);
+  return value;
+}
 
 export function useSearchParamInt(
   key: string,
   def?: number
 ): number | undefined {
-  const str = useSearchParam(key);
+  const str = useHashParamValue(key);
   return useMemo(() => {
     try {
       const v = parseInt(str || "");
@@ -20,7 +53,7 @@ export function useSearchParamBool(
   key: string,
   def?: boolean
 ): boolean | undefined {
-  const str = useSearchParam(key) || "";
+  const str = useHashParamValue(key) || "";
   return useMemo(() => {
     try {
       if (str.toLocaleLowerCase() == "true") {
@@ -49,7 +82,7 @@ export function useSearchParamString(
   key: string,
   def?: string
 ): string | undefined {
-  const str = useSearchParam(key);
+  const str = useHashParamValue(key);
   return useMemo(() => {
     return str === null ? def : str;
   }, [str, def]);
@@ -59,7 +92,7 @@ export function useSearchParamBase64DecodeToString(
   key: string,
   def?: string
 ): string | undefined {
-  const str = useSearchParam(key);
+  const str = useHashParamValue(key);
   return useMemo(() => {
     if (str === null) {
       return def;
